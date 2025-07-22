@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MKC House Points</title>
+  <style>
+    body {
+      font-family: "Comic Sans MS", cursive, sans-serif;
+      background: #f4f4f4;
+      text-align: center;
+      padding: 100px;
+    }
+    h1 {
+      font-size: 64px;
+      background: linear-gradient(-45deg, blue 20%, green 20%, red 20%, yellow 90%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.5);
+      margin-bottom: 60px;
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: nowrap;
+    }
+    .cylinder {
+      position: relative;
+      width: 300px;
+      height: 600px;
+      background: #ccc;
+      border-radius: 50px;
+      overflow: hidden;
+      border: 2px solid #aaa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .fill {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 0%;
+      transition: height 0.5s ease;
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      animation: fillGradient 2s ease infinite alternate;
+    }
+    .total {
+      position: absolute;
+      z-index: 2;
+      font-weight: bold;
+      font-size: 48px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+      transition: all 0.2s ease;
+    }
+    #red-total { color: #cc0000; }
+    #blue-total { color: #0033cc; }
+    #green-total { color: #009900; }
+    #yellow-total { color: #cc9900; }
+
+    @keyframes fillGradient {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 0% 100%; }
+    }
+     .label {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 10px;
+      font-size: 24px;
+    }
+    button, input[type="number"] {
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    input[type="number"] {
+      width: 80px;
+    }
+    #red-fill {
+      background-image: linear-gradient(to top, #ff4d4d, #ff9999);
+    }
+    #blue-fill {
+      background-image: linear-gradient(to top, #4d79ff, #99b3ff);
+    }
+    #green-fill {
+      background-image: linear-gradient(to top, #33cc33, #99e699);
+    }
+    #yellow-fill {
+      background-image: linear-gradient(to top, #ffd11a, #fff599);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>MKC House Points</h1>
+  <div class="container" id="cylinders">
+    <!-- Each cylinder block -->
+    <div>
+      <div class="cylinder">
+        <div class="total" id="red-total">0</div>
+        <div class="fill" id="red-fill"></div>
+        <div class="label">Red Lion</div>
+      </div>
+      <button onclick="addPoints('red', 1)">+1</button>
+      <button onclick="addPoints('red', -1)">-1</button><br>
+      <input type="number" id="red-input" placeholder="Enter #">
+      <button onclick="addCustomPoints('red')">Add</button>
+    </div>
+
+    <div>
+      <div class="cylinder">
+        <div class="total" id="blue-total">0</div>
+        <div class="fill" id="blue-fill"></div>
+        <div class="label">Blue Elk</div>
+      </div>
+      <button onclick="addPoints('blue', 1)">+1</button>
+      <button onclick="addPoints('blue', -1)">-1</button><br>
+      <input type="number" id="blue-input" placeholder="Enter #">
+      <button onclick="addCustomPoints('blue')">Add</button>
+    </div>
+
+    <div>
+      <div class="cylinder">
+        <div class="total" id="green-total">0</div>
+        <div class="fill" id="green-fill"></div>
+        <div class="label">Green Tiger</div>
+      </div>
+      <button onclick="addPoints('green', 1)">+1</button>
+      <button onclick="addPoints('green', -1)">-1</button><br>
+      <input type="number" id="green-input" placeholder="Enter #">
+      <button onclick="addCustomPoints('green')">Add</button>
+    </div>
+
+    <div>
+      <div class="cylinder">
+        <div class="total" id="yellow-total">0</div>
+        <div class="fill" id="yellow-fill"></div>
+        <div class="label">Yellow Eagle</div>
+      </div>
+      <button onclick="addPoints('yellow', 1)">+1</button>
+      <button onclick="addPoints('yellow', -1)">-1</button><br>
+      <input type="number" id="yellow-input" placeholder="Enter #">
+      <button onclick="addCustomPoints('yellow')">Add</button>
+    </div>
+  </div>
+
+  <audio id="add-sound" src="https://cdn.pixabay.com/download/audio/2022/10/24/audio_b00cf5db6a.mp3?filename=game-positive-sound-1-7053.mp3"></audio>
+  <audio id="deduct-sound" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_4e3fa3a68a.mp3?filename=negative_beeps-6008.mp3"></audio>
+
+  <script>
+    const maxPoints = 1000;
+    const points = {
+      red: 0,
+      blue: 0,
+      green: 0,
+      yellow: 0
+    };
+
+    const addSound = document.getElementById("add-sound");
+    const deductSound = document.getElementById("deduct-sound");
+
+    // Load from localStorage on page load
+    window.onload = () => {
+      const saved = JSON.parse(localStorage.getItem('mkc-points'));
+      if (saved) {
+        for (let color in saved) {
+          points[color] = saved[color];
+          updateDisplay(color);
+        }
+      }
+    };
+
+    function updateDisplay(color) {
+      const totalEl = document.getElementById(`${color}-total`);
+      totalEl.textContent = points[color];
+      totalEl.style.transform = "scale(1.3)";
+      setTimeout(() => {
+        totalEl.style.transform = "scale(1)";
+      }, 150);
+      document.getElementById(`${color}-fill`).style.height = (points[color] / maxPoints * 100) + "%";
+    }
+
+    function addPoints(color, value) {
+      points[color] = Math.max(0, Math.min(points[color] + value, maxPoints));
+      updateDisplay(color);
+      localStorage.setItem('mkc-points', JSON.stringify(points));
+
+      if (value > 0) {
+        addSound.currentTime = 0;
+        addSound.play();
+      } else if (value < 0) {
+        deductSound.currentTime = 0;
+        deductSound.play();
+      }
+    }
+
+    function addCustomPoints(color) {
+      const input = document.getElementById(`${color}-input`).value;
+      const value = parseInt(input);
+      if (!isNaN(value)) {
+        addPoints(color, value);
+      }
+    }
+  </script>
+
+</body>
+</html>
